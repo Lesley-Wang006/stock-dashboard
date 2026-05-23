@@ -1,5 +1,5 @@
 streamlit
-yfinance
+yfinance==0.2.51
 ta
 anthropic
 newsapi-python
@@ -11,4 +11,3 @@ scikit-learn
 pandas
 numpy
 requests
-yfinance==0.2.51
