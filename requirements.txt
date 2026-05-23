@@ -1,0 +1,13 @@
+streamlit
+yfinance
+ta
+anthropic
+newsapi-python
+vaderSentiment
+plotly
+feedparser
+google-generativeai
+openai
+scikit-learn
+pandas
+numpy
