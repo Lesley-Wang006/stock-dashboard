@@ -1,5 +1,5 @@
 streamlit
-yfinance==0.2.51
+yfinance
 ta
 anthropic
 newsapi-python
@@ -7,7 +7,4 @@ vaderSentiment
 plotly
 feedparser
 openai
-scikit-learn
-pandas
-numpy
 requests
