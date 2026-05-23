@@ -4,7 +4,7 @@
 # pip install streamlit yfinance ta anthropic newsapi-python
 #      vaderSentiment plotly feedparser openai requests
 # ─────────────────────────────────────────────────────
- 
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -19,14 +19,14 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
- 
+
 st.set_page_config(
     page_title="Signal Dashboard",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded"
 )
- 
+
 LANG = {
     "English": {
         "title":"Stock Signal Dashboard","theme":"Theme","dark":"Dark","pink":"Pink",
@@ -118,25 +118,25 @@ LANG = {
         "morning_brief":"AI 早间简报","days_to_earn":"天后财报","no_earn_data":"暂无",
     }
 }
- 
+
 for k,v in [("messages",[]),("theme","Dark"),("lang","English"),
             ("ai_provider","Google Gemini (Free)"),("portfolio",[])]:
     if k not in st.session_state: st.session_state[k]=v
- 
+
 with st.sidebar:
     lang = st.selectbox("🌐",["English","Français","简体中文"],
                          index=["English","Français","简体中文"].index(st.session_state.lang),
                          label_visibility="collapsed")
     st.session_state.lang = lang
     T = LANG[lang]
- 
+
     st.markdown(f"### {T['theme']}")
     theme = st.radio("",options=[T['dark'],T['pink']],
                      index=0 if st.session_state.theme==T['dark'] else 1,
                      horizontal=True, label_visibility="collapsed")
     st.session_state.theme = theme
     is_pink = theme == T['pink']
- 
+
     st.markdown("---")
     st.markdown(f"### {T['ai_provider']}")
     AI_OPTIONS = ["Google Gemini (Free)","Claude (Anthropic)","DeepSeek"]
@@ -145,7 +145,7 @@ with st.sidebar:
                                  if st.session_state.ai_provider in AI_OPTIONS else 0,
                            label_visibility="collapsed")
     st.session_state.ai_provider = ai_choice
- 
+
     GEMINI_KEY = ANTHROPIC_KEY = DEEPSEEK_KEY = ""
     if ai_choice == "Google Gemini (Free)":
         GEMINI_KEY    = st.text_input(T['gemini_key'], type="password", placeholder="AIzaSy...")
@@ -156,15 +156,15 @@ with st.sidebar:
     else:
         DEEPSEEK_KEY  = st.text_input(T['deepseek_key'], type="password", placeholder="sk-...")
         st.caption("platform.deepseek.com")
- 
+
     st.markdown("---")
     NEWSAPI_KEY = st.text_input(T['news_key'], type="password", placeholder="leave empty = RSS only")
     st.markdown("---")
     st.caption(T['not_advice'])
- 
+
 T       = LANG[st.session_state.lang]
 is_pink = st.session_state.theme == T['pink']
- 
+
 if is_pink:
     BG,BG2,BG3   = "#fff0f5","#ffe4ef","#ffd6e7"
     BORDER       = "#ffb3d1"
@@ -183,7 +183,7 @@ else:
     FONT         = "'IBM Plex Mono',monospace"
     RADIUS       = "6px"
     CHART_BG     = "#111318"
- 
+
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap');
@@ -210,7 +210,7 @@ p,li,span{{color:{TEXT2};}}
 .stTabs [data-baseweb="tab"]{{background:{BG2};color:{TEXT2};}}
 .stTabs [aria-selected="true"]{{background:{BG3}!important;color:{TEXT}!important;border-bottom:2px solid {ACCENT}!important;}}
 </style>""", unsafe_allow_html=True)
- 
+
 # ── Gemini REST API (no library needed) ───────────────
 def gemini_call(prompt, gemini_key):
     """Calls Gemini directly via REST API — no library version issues"""
@@ -222,7 +222,7 @@ def gemini_call(prompt, gemini_key):
         return data['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
         return f"Gemini error: {e} | Response: {res.text[:200] if 'res' in dir() else 'no response'}"
- 
+
 # ── Data helpers ──────────────────────────────────────
 @st.cache_data(ttl=3600)
 def load_stock(ticker):
@@ -264,7 +264,7 @@ def load_stock(ticker):
         except: info['next_earnings']='N/A'
     except: pass
     return df.dropna(subset=['RSI','MACD']),info
- 
+
 @st.cache_data(ttl=1800)
 def get_options(ticker):
     try:
@@ -275,7 +275,7 @@ def get_options(ticker):
         iv=round(((chain.calls['impliedVolatility'].mean()+chain.puts['impliedVolatility'].mean())/2)*100,1)
         return pc,iv
     except: return 0.75,25.0
- 
+
 def fetch_headlines(ticker,newsapi_key):
     headlines=[]
     company=ticker.replace('.TO','').replace('-USD','')
@@ -300,20 +300,20 @@ def fetch_headlines(ticker,newsapi_key):
                 if a['title'] not in headlines: headlines.append(a['title'])
         except: pass
     return headlines[:8]
- 
+
 def score_headlines(headlines):
     # Always use VADER — no API call on page load, saves quota
     analyzer=SentimentIntensityAnalyzer()
     return [{'headline':h,'score':round(analyzer.polarity_scores(h)['compound']),
              'reason':'VADER score'} for h in headlines]
- 
+
 def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang):
     ln={"Français":"Répondez en français.","简体中文":"请用简体中文回答。"}.get(lang,"")
     system=f"You are a financial analyst assistant. Context: {context}. {ln} Keep answers concise. Not financial advice."
- 
+
     if provider=="Google Gemini (Free)" and gemini_key and gemini_key.strip():
         return gemini_call(f"{system}\n\nUser: {question}", gemini_key)
- 
+
     elif provider=="Claude (Anthropic)" and anthropic_key and anthropic_key.strip():
         try:
             client=anthropic.Anthropic(api_key=anthropic_key)
@@ -321,7 +321,7 @@ def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang)
                     system=system,messages=[{"role":"user","content":question}])
             return msg.content[0].text
         except Exception as e: return f"Claude error: {e}"
- 
+
     elif provider=="DeepSeek" and deepseek_key and deepseek_key.strip():
         try:
             from openai import OpenAI
@@ -330,56 +330,56 @@ def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang)
                 messages=[{"role":"system","content":system},{"role":"user","content":question}])
             return r.choices[0].message.content
         except Exception as e: return f"DeepSeek error: {e}"
- 
+
     return {"Français":"Ajoutez une clé API.","简体中文":"请添加API密钥。"}.get(lang,"Please add an API key in the sidebar.")
- 
+
 def get_conclusion(row,sentiment,pc_ratio,T):
     score,votes=0,[]
     rsi=float(row['RSI']); macd=float(row['MACD']); msig=float(row['MACD_signal'])
     rc=float(row.get('rate_change',0)); cl=float(row['Close'])
     ma50=float(row.get('MA50',cl)); ma200=float(row.get('MA200',cl))
     vol=float(row.get('Volume',0)); vavg=float(row.get('Vol_avg',1))
- 
+
     if rsi<30:   score+=1;votes.append(('+1',f'RSI {rsi:.1f}',T['oversold']))
     elif rsi>70: score-=1;votes.append(('-1',f'RSI {rsi:.1f}',T['overbought']))
     else:                  votes.append((' 0',f'RSI {rsi:.1f}','Neutral'))
- 
+
     if macd>msig: score+=1;votes.append(('+1',f'MACD {macd:.2f}',T['bull_momentum']))
     else:         score-=1;votes.append(('-1',f'MACD {macd:.2f}',T['bear_momentum']))
- 
+
     if rc<-5:   score+=1;votes.append(('+1',f'Rates {rc:+.1f}bps',T['falling_rates']))
     elif rc>5:  score-=1;votes.append(('-1',f'Rates {rc:+.1f}bps',T['rising_rates']))
     else:                 votes.append((' 0',f'Rates {rc:+.1f}bps',T['stable_rates']))
- 
+
     if sentiment>.2:    score+=1;votes.append(('+1',f'Sent {sentiment:+.2f}',T['pos_news']))
     elif sentiment<-.2: score-=1;votes.append(('-1',f'Sent {sentiment:+.2f}',T['neg_news']))
     else:                         votes.append((' 0',f'Sent {sentiment:+.2f}',T['neut_news']))
- 
+
     if pc_ratio<.7:   score+=1;votes.append(('+1',f'P/C {pc_ratio}',T['more_calls']))
     elif pc_ratio>1.: score-=1;votes.append(('-1',f'P/C {pc_ratio}',T['heavy_puts']))
     else:                       votes.append((' 0',f'P/C {pc_ratio}',T['balanced']))
- 
+
     if cl>ma50:   score+=1;votes.append(('+1',f'MA50 ${ma50:.1f}',T['above_50ma']))
     else:         score-=1;votes.append(('-1',f'MA50 ${ma50:.1f}',T['below_50ma']))
- 
+
     if ma50>ma200: score+=1;votes.append(('+1','MA cross',T['golden_cross']))
     else:          score-=1;votes.append(('-1','MA cross',T['death_cross']))
- 
+
     if vol>vavg*1.2: score+=1;votes.append(('+1',f'Vol {vol/1e6:.1f}M',T['high_vol']))
     else:             votes.append((' 0',f'Vol {vol/1e6:.1f}M',T['low_vol']))
- 
+
     label=T['bullish'] if score>=3 else T['bearish'] if score<=-3 else T['neutral']
     return label,score,votes
- 
+
 def fmt_cap(v):
     if not v or v==0: return 'N/A'
     if v>=1e12: return f"${v/1e12:.2f}T"
     if v>=1e9:  return f"${v/1e9:.1f}B"
     return f"${v/1e6:.0f}M"
- 
+
 st.markdown(f"# {'🌸' if is_pink else '📈'} {T['title']}")
 tab1,tab2,tab3 = st.tabs([T['stock_tab'],T['portfolio_tab'],T['chat_tab']])
- 
+
 # ═══════════════════════════════════════════════════
 # TAB 1 — SINGLE STOCK
 # ═══════════════════════════════════════════════════
@@ -392,26 +392,26 @@ with tab1:
         selected_date = st.date_input(T['date_label'],value=datetime.today(),
                                       min_value=datetime(2006,1,1),max_value=datetime.today())
     if not TICKER: st.info("Enter a ticker symbol above"); st.stop()
- 
+
     with st.spinner(T['loading']): df,info = load_stock(TICKER)
     if df is None: st.error(f"Could not load {TICKER}. Check the symbol."); st.stop()
- 
+
     available = df.index[df.index<=pd.Timestamp(selected_date)]
     if len(available)==0: st.error("No data for this date"); st.stop()
     row         = df.loc[available[-1]]
     actual_date = available[-1].strftime("%Y-%m-%d")
     pc_ratio,impl_vol = get_options(TICKER)
- 
+
     with st.spinner(T['fetching_news']):
         headlines  = fetch_headlines(TICKER,NEWSAPI_KEY)
         ai_results = score_headlines(headlines)
         sentiment  = sum(h['score'] for h in ai_results)/max(len(ai_results),1)
- 
+
     close = float(row['Close'])
     label,score,votes = get_conclusion(row,sentiment,pc_ratio,T)
     prev  = float(df['Close'].iloc[-2]) if len(df)>1 else close
     pct   = (close-prev)/prev*100
- 
+
     pe  = info.get('pe','N/A')
     ne  = info.get('next_earnings','N/A')
     ne_txt = ne
@@ -420,7 +420,7 @@ with tab1:
             d=(datetime.strptime(ne,'%Y-%m-%d')-datetime.today()).days
             ne_txt=f"{ne} ({d} {T['days_to_earn']})"
         except: pass
- 
+
     cols8 = st.columns(8)
     mets  = [
         (T['close'],f"${close:.2f}",f"{pct:+.2f}%",BULL if pct>=0 else BEAR),
@@ -435,14 +435,14 @@ with tab1:
     for col,(lbl,val,sub,clr) in zip(cols8,mets):
         with col:
             st.markdown(f'<div class="mc"><div class="ml">{lbl}</div><div class="mv" style="color:{clr};font-size:15px">{val}</div><div class="ms">{sub}</div></div>',unsafe_allow_html=True)
- 
+
     css_c='cb' if T['bullish'] in label else 'cr' if T['bearish'] in label else 'cn'
     clr_c=BULL if T['bullish'] in label else BEAR if T['bearish'] in label else NEUT
     bv=[v[1] for v in votes if v[0]=='+1']; bev=[v[1] for v in votes if v[0]=='-1']
     rsn=(f"{T['bullish']}: "+', '.join(bv)) if T['bullish'] in label else \
         (f"{T['bearish']}: "+', '.join(bev)) if T['bearish'] in label else T['neutral']
     st.markdown(f'<div class="{css_c}"><div style="font-size:21px;font-weight:700;color:{clr_c}">{label} · {actual_date}</div><div style="font-size:13px;color:{clr_c};opacity:.85;margin-top:4px">{rsn}</div></div>',unsafe_allow_html=True)
- 
+
     st.markdown(f'<div class="sl">{T["morning_brief"]}</div>',unsafe_allow_html=True)
     active_key = GEMINI_KEY or ANTHROPIC_KEY or DEEPSEEK_KEY
     if active_key:
@@ -455,7 +455,7 @@ with tab1:
                 st.markdown(f'<div class="brief">{brief}</div>',unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="brief" style="color:{TEXT3}">Add an API key in the sidebar to get the AI morning brief</div>',unsafe_allow_html=True)
- 
+
     cl_l,cl_r = st.columns([2,1])
     with cl_l:
         st.markdown(f'<div class="sl">{T["price_chart"]} — 180 days</div>',unsafe_allow_html=True)
@@ -481,7 +481,7 @@ with tab1:
             yaxis3=dict(gridcolor=BORDER,title='MACD'),legend=dict(bgcolor='rgba(0,0,0,0)',font=dict(size=10)),
             margin=dict(l=0,r=0,t=10,b=0),height=480,hovermode='x unified')
         st.plotly_chart(fig,use_container_width=True)
- 
+
     with cl_r:
         st.markdown(f'<div class="sl">{T["signal_votes"]}</div>',unsafe_allow_html=True)
         for v,sig,rsn in votes:
@@ -492,7 +492,7 @@ with tab1:
             c=BULL if h['score']>0 else BEAR if h['score']<0 else TEXT3
             a='▲' if h['score']>0 else '▼' if h['score']<0 else '◆'
             st.markdown(f'<div class="ni"><div style="font-size:12px;color:{c}">{a} {h["headline"][:58]}...</div><div style="font-size:11px;color:{TEXT3};font-style:italic;margin-top:2px">{h["reason"]}</div></div>',unsafe_allow_html=True)
- 
+
 # ═══════════════════════════════════════════════════
 # TAB 2 — PORTFOLIO
 # ═══════════════════════════════════════════════════
@@ -508,7 +508,7 @@ with tab2:
                 st.session_state.portfolio=[p for p in st.session_state.portfolio if p['ticker']!=new_t]
                 st.session_state.portfolio.append({'ticker':new_t,'weight':new_w})
                 st.rerun()
- 
+
     if not st.session_state.portfolio:
         st.info("Add stocks above to build your portfolio")
     else:
@@ -523,12 +523,12 @@ with tab2:
             p_scores.append(sc_p*(w/total_w))
             results.append({'ticker':tk,'weight':w,'pct':w/total_w*100,
                             'close':float(row_p['Close']),'label':lbl_p,'score':sc_p,'rsi':float(row_p['RSI'])})
- 
+
         ts=sum(p_scores)
         pl=T['bullish'] if ts>=1.5 else T['bearish'] if ts<=-1.5 else T['neutral']
         pc=BULL if T['bullish'] in pl else BEAR if T['bearish'] in pl else NEUT
         st.markdown(f'<div class="{"cb" if T["bullish"] in pl else "cr" if T["bearish"] in pl else "cn"}"><div style="font-size:20px;font-weight:700;color:{pc}">{T["portfolio_score"]}: {pl}</div><div style="font-size:13px;color:{pc};opacity:.85">Weighted score: {ts:+.2f}</div></div>',unsafe_allow_html=True)
- 
+
         hcols=st.columns([1.5,1,1,1,1,1,0.8])
         for col,h in zip(hcols,['Ticker','Weight','Price','RSI','Signal','Score','Del']):
             col.markdown(f"<div style='font-size:10px;color:{TEXT3};text-transform:uppercase'>{h}</div>",unsafe_allow_html=True)
@@ -545,7 +545,7 @@ with tab2:
                 if st.button("✕",key=f"rm_{r['ticker']}"):
                     st.session_state.portfolio=[p for p in st.session_state.portfolio if p['ticker']!=r['ticker']]
                     st.rerun()
- 
+
         if results:
             colors=['#00d084','#ff4d6a','#ffc940','#8b5cf6','#f59e0b','#3d9eff','#ec4899','#10b981']
             fig2=go.Figure(go.Pie(labels=[r['ticker'] for r in results],values=[r['weight'] for r in results],
@@ -554,7 +554,7 @@ with tab2:
                 legend=dict(bgcolor='rgba(0,0,0,0)'),margin=dict(l=0,r=0,t=30,b=0),height=280,
                 title=dict(text=T['diversification'],font=dict(color=TEXT)))
             st.plotly_chart(fig2,use_container_width=True)
- 
+
 # ═══════════════════════════════════════════════════
 # TAB 3 — AI CHAT
 # ═══════════════════════════════════════════════════
@@ -563,12 +563,12 @@ with tab3:
     st.markdown(f"## {ci} {T['ask_ai']}")
     provider_label = st.session_state.ai_provider
     st.caption(f"Using {provider_label}")
- 
+
     for msg in st.session_state.messages:
         css_m="cu" if msg['role']=='user' else "ca"
         icon="👤" if msg['role']=='user' else ci
         st.markdown(f'<div class="{css_m}">{icon} {msg["content"]}</div>',unsafe_allow_html=True)
- 
+
     st.markdown(f'<div class="sl">{T["quick_q"]}</div>',unsafe_allow_html=True)
     q1,q2,q3,q4,q5=st.columns(5)
     quick_q=None
@@ -583,12 +583,12 @@ with tab3:
         if st.button(T['risk_check'],key="qb4"): quick_q=f"What are the main risks for {tk_ctx} right now?"
     with q5:
         if st.button(T['ma_cross'],key="qb5"): quick_q=f"Explain the MA crossover signal for {tk_ctx}"
- 
+
     with st.form(key="chat_form",clear_on_submit=True):
         user_input = st.text_input(T['type_q'],placeholder=f"e.g. Why is {tk_ctx} bearish?")
         send = st.form_submit_button("Send ↗")
     question = quick_q or (user_input if send and user_input else None)
- 
+
     if question and ('last_q' not in st.session_state or st.session_state.last_q != question):
         st.session_state.last_q = question
         ctx=f"Stock:{tk_ctx},Provider:{provider_label},Lang:{st.session_state.lang}"
@@ -598,10 +598,10 @@ with tab3:
                        st.session_state.ai_provider,st.session_state.lang)
         st.session_state.messages.append({'role':'assistant','content':ans})
         st.rerun()
- 
+
     if st.button(T['clear_chat']):
         st.session_state.messages=[]
         st.rerun()
- 
+
 st.markdown("---")
 st.caption(T['not_advice'])
