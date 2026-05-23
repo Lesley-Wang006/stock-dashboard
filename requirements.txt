@@ -11,3 +11,4 @@ scikit-learn
 pandas
 numpy
 requests
+yfinance==0.2.51
