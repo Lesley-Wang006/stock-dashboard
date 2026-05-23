@@ -302,10 +302,12 @@ ONLY return valid JSON array."""
 
     if provider=="Google Gemini (Free)" and gemini_key and gemini_key.strip():
         try:
-            import google.generativeai as genai,json
-            genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-1.5-flash').generate_content(prompt)
-            return json.loads(r.text.replace('```json','').replace('```','').strip())
+            import json, requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}"
+            body = {"contents":[{"parts":[{"text":prompt}]}]}
+            res  = requests.post(url, json=body, timeout=30)
+            text = res.json()['candidates'][0]['content']['parts'][0]['text']
+            return json.loads(text.replace('```json','').replace('```','').strip())
         except: pass
 
     elif provider=="Claude (Anthropic)" and anthropic_key and anthropic_key.strip():
@@ -336,10 +338,11 @@ def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang)
 
     if provider=="Google Gemini (Free)" and gemini_key and gemini_key.strip():
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-1.5-flash',system_instruction=system).generate_content(question)
-            return r.text
+            import requests
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={gemini_key}"
+            body = {"contents":[{"parts":[{"text":f"{system}\n\nUser: {question}"}]}]}
+            res  = requests.post(url, json=body, timeout=30)
+            return res.json()['candidates'][0]['content']['parts'][0]['text']
         except Exception as e: return f"Gemini error: {e}"
 
     elif provider=="Claude (Anthropic)" and anthropic_key and anthropic_key.strip():
@@ -482,7 +485,7 @@ with tab1:
         <div style="font-size:13px;color:{clr_c};opacity:.85;margin-top:4px">{rsn}</div>
     </div>""",unsafe_allow_html=True)
 
-    # Morning brief — only runs when button clicked
+    # Morning brief
     st.markdown(f'<div class="sl">{T["morning_brief"]}</div>',unsafe_allow_html=True)
     active_key = GEMINI_KEY or ANTHROPIC_KEY or DEEPSEEK_KEY
     if active_key:
@@ -631,37 +634,33 @@ with tab3:
     provider_label = st.session_state.ai_provider
     st.caption(f"Using {provider_label}")
 
-    # Show chat history
     for msg in st.session_state.messages:
         css_m="cu" if msg['role']=='user' else "ca"
         icon="👤" if msg['role']=='user' else ci
         st.markdown(f'<div class="{css_m}">{icon} {msg["content"]}</div>',unsafe_allow_html=True)
 
-    # Quick question buttons
     st.markdown(f'<div class="sl">{T["quick_q"]}</div>',unsafe_allow_html=True)
-    tk_ctx='AAPL' if 'TICKER' not in dir() else TICKER
     q1,q2,q3,q4,q5=st.columns(5)
     quick_q=None
+    tk_ctx='AAPL' if 'TICKER' not in dir() else TICKER
     with q1:
-        if st.button(T['buy_today'],key="qb1"): quick_q=f"Should I buy {tk_ctx} today based on current signals?"
+        if st.button(T['buy_today']): quick_q=f"Should I buy {tk_ctx} today based on current signals?"
     with q2:
-        if st.button(T['explain_rsi'],key="qb2"): quick_q=f"Explain RSI and how to use it for {tk_ctx}"
+        if st.button(T['explain_rsi']): quick_q=f"Explain RSI and how to use it for {tk_ctx}"
     with q3:
-        if st.button(T['news_impact'],key="qb3"): quick_q=f"What is the likely news impact on {tk_ctx} today?"
+        if st.button(T['news_impact']): quick_q=f"What is the likely news impact on {tk_ctx} today?"
     with q4:
-        if st.button(T['risk_check'],key="qb4"): quick_q=f"What are the main risks for {tk_ctx} right now?"
+        if st.button(T['risk_check']): quick_q=f"What are the main risks for {tk_ctx} right now?"
     with q5:
-        if st.button(T['ma_cross'],key="qb5"): quick_q=f"Explain the MA crossover signal for {tk_ctx}"
+        if st.button(T['ma_cross']): quick_q=f"Explain the MA crossover signal for {tk_ctx}"
 
-    # Text input — only sends when Enter is pressed
     with st.form(key="chat_form", clear_on_submit=True):
         user_input = st.text_input(T['type_q'], placeholder=f"e.g. Why is {tk_ctx} bearish?")
-        send = st.form_submit_button("Send")
-
+        send = st.form_submit_button("Send ↗")
     question = quick_q or (user_input if send and user_input else None)
 
-    # Only call AI once when question is submitted
-    if question and question not in [m['content'] for m in st.session_state.messages if m['role']=='user']:
+    if question and ('last_q' not in st.session_state or st.session_state.last_q != question):
+        st.session_state.last_q = question
         ctx=f"Stock:{tk_ctx},Provider:{provider_label},Lang:{st.session_state.lang}"
         st.session_state.messages.append({'role':'user','content':question})
         with st.spinner("..."):
