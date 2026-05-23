@@ -275,7 +275,8 @@ def get_options(ticker):
         iv=round(((chain.calls['impliedVolatility'].mean()+chain.puts['impliedVolatility'].mean())/2)*100,1)
         return pc,iv
     except: return 0.75,25.0
-
+        
+@st.cache_data(ttl=1800)
 def fetch_headlines(ticker,newsapi_key):
     headlines=[]
     company=ticker.replace('.TO','').replace('-USD','')
