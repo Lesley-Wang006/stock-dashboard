@@ -6,9 +6,8 @@ newsapi-python
 vaderSentiment
 plotly
 feedparser
-google-genai
 openai
 scikit-learn
 pandas
 numpy
-
+requests
