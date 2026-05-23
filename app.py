@@ -304,7 +304,7 @@ ONLY return valid JSON array."""
         try:
             import google.generativeai as genai,json
             genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-1.5-flash-latest').generate_content(prompt)
+            r=genai.GenerativeModel('gemini-1.5-flash').generate_content(prompt)
             return json.loads(r.text.replace('```json','').replace('```','').strip())
         except: pass
 
@@ -338,7 +338,7 @@ def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang)
         try:
             import google.generativeai as genai
             genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-1.5-flash-latest',system_instruction=system).generate_content(question)
+            r=genai.GenerativeModel('gemini-1.5-flash',system_instruction=system).generate_content(question)
             return r.text
         except Exception as e: return f"Gemini error: {e}"
 
