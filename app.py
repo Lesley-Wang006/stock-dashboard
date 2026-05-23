@@ -302,9 +302,10 @@ ONLY return valid JSON array."""
 
     if provider=="Google Gemini (Free)" and gemini_key and gemini_key.strip():
         try:
-            import google.generativeai as genai,json
-            genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-pro').generate_content(prompt)
+            from google import genai as gai
+            import json
+            client = gai.Client(api_key=gemini_key)
+            r = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
             return json.loads(r.text.replace('```json','').replace('```','').strip())
         except: pass
 
@@ -336,9 +337,12 @@ def ask_ai(question,context,anthropic_key,gemini_key,deepseek_key,provider,lang)
 
     if provider=="Google Gemini (Free)" and gemini_key and gemini_key.strip():
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=gemini_key)
-            r=genai.GenerativeModel('gemini-pro',system_instruction=system).generate_content(question)
+            from google import genai as gai
+            client = gai.Client(api_key=gemini_key)
+            r = client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=f"{system}\n\nUser question: {question}"
+            )
             return r.text
         except Exception as e: return f"Gemini error: {e}"
 
