@@ -1,84 +1,143 @@
-📈 Stock Signal Dashboard
-A multi-factor stock analysis dashboard that combines technical indicators, AI-powered news sentiment, options flow data, and interest rate signals into a single daily buy/sell conclusion for any stock on Yahoo Finance.
+# 📈 Stock Signal Dashboard
 
-Note: This project was originally inspired by a DataCamp reinforcement learning project on stock trading simulation with Gymnasium. The dashboard, signal engine, AI integration, portfolio tracker, and web app were built entirely with the help of Claude by Anthropic.
+A multi-factor stock analysis dashboard that combines:
 
-Live app: [your Streamlit URL here]
+- Technical indicators
+- AI-powered news sentiment
+- Options flow data
+- Interest rate signals
 
-What it does
-Every morning you open the dashboard, enter a ticker, and get a clear BULLISH / BEARISH / NEUTRAL conclusion based on 8 signals computed from live market data. You can also ask the AI chatbot questions about the stock in plain English.
+into a single daily **BUY / SELL / NEUTRAL** conclusion for any stock on Yahoo Finance.
 
-Features
+---
 
-Any stock — type any Yahoo Finance ticker: AAPL, NVDA, MSFT, RY.TO, BTC-USD, SPY, and thousands more
-8-signal scoring engine — each signal votes +1 (bullish), −1 (bearish), or 0 (neutral). Score ≥ +3 = BULLISH, ≤ −3 = BEARISH
-Live candlestick chart — TradingView-style chart with MA50, MA200, volume bars, and MACD histogram for the last 180 days
-Fundamental data — P/E ratio, market cap, beta, dividend yield, 52-week range, next earnings date with countdown
-AI Morning Brief — click once to get a 3-sentence AI-generated summary of what to watch today
-AI news sentiment — VADER NLP scores headlines from Yahoo Finance and Reuters automatically on every page load. No API key needed for this.
-AI chatbot — ask anything about the stock. Supports Google Gemini (free), Claude (Anthropic), and DeepSeek
-Portfolio tracker — add multiple stocks with custom weights, see a combined portfolio signal score and diversification pie chart
-3 languages — English, Français, 简体中文 — switch from the sidebar
-2 themes — Dark and Pink, switch instantly
-20% stop-loss rule — the PPO trading agent (in the Jupyter notebook) stops trading if the balance drops 20% below starting capital
+## 🚀 Features
 
+### 📊 Market Analysis
+- RSI
+- MACD
+- MA50 / MA200
+- Volume analysis
+- Put/Call ratio
+- Interest rate signals
+- News sentiment scoring
 
-The 8 signals explained
-SignalBullish conditionBearish conditionRSI (14-day)RSI < 30 (oversold)RSI > 70 (overbought)MACDMACD line above signal lineMACD line below signal lineInterest rates10Y Treasury yield fell > 5bpsYield rose > 5bpsNews sentimentVADER score > 0.2VADER score < −0.2Options flowPut/call ratio < 0.7Put/call ratio > 1.0MA50 positionPrice above 50-day MAPrice below 50-day MAMA crossover50MA above 200MA (golden cross)50MA below 200MA (death cross)VolumeToday's volume > 120% of 20-day averageVolume below average
+### 🤖 AI Integration
+- AI Morning Brief
+- AI chatbot for stock questions
+- Supports:
+  - Google Gemini
+  - Claude
+  - DeepSeek
 
-The Reinforcement Learning trading bot
-In addition to the dashboard, the Jupyter notebook (Untitled.ipynb) contains a PPO (Proximal Policy Optimization) reinforcement learning agent trained on 15 years of AAPL data:
+### 📈 Visualization
+- Live candlestick charts
+- MACD histogram
+- Volume bars
+- Portfolio diversification pie chart
 
-Downloads live AAPL data from yfinance on every run — no stale CSV
-Computes all 8 signals as features for the PPO agent
-Normalizes features using RobustScaler (handles outliers better than MinMax for financial data)
-Trains a neural network with architecture [256, 256, 128] for 100,000 timesteps
-Runs a trading loop buying/selling 10% of balance per trade
-Hard stop-loss: if portfolio value drops below $80,000, sells everything and stops
-Produces two charts: trade actions on the price chart, and balance over time
+### 🌍 Other Features
+- Portfolio tracker
+- 3 languages:
+  - English
+  - Français
+  - 简体中文
+- Dark / Pink themes
+- PPO reinforcement learning trading bot
 
+---
 
-How to run locally
-bash# 1. Create environment
-conda create -n trading python=3.11 -y
-conda activate trading
+## 🧠 8-Signal Scoring Engine
 
-# 2. Install dependencies
+Each signal gives:
+
+- `+1` → Bullish
+- `0` → Neutral
+- `-1` → Bearish
+
+### Final Score
+- Score ≥ +3 → **BULLISH**
+- Score ≤ −3 → **BEARISH**
+- Otherwise → **NEUTRAL**
+
+---
+
+## 📌 Signals Used
+
+| Signal | Bullish | Bearish |
+|---|---|---|
+| RSI | RSI < 30 | RSI > 70 |
+| MACD | MACD above signal line | MACD below signal line |
+| Interest Rates | 10Y yield falls | 10Y yield rises |
+| News Sentiment | Positive VADER score | Negative VADER score |
+| Options Flow | Put/Call < 0.7 | Put/Call > 1.0 |
+| MA50 | Price above MA50 | Price below MA50 |
+| MA Cross | Golden cross | Death cross |
+| Volume | Volume above average | Volume below average |
+
+---
+
+## 🤖 Reinforcement Learning Trading Bot
+
+The project also includes a PPO reinforcement learning trading agent trained on historical AAPL data.
+
+### Features
+- Live data using `yfinance`
+- Signal-based features
+- PPO model using Stable-Baselines3
+- Stop-loss protection
+- Portfolio balance tracking
+- Trading visualization
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Tools |
+|---|---|
+| Data | yfinance, pandas |
+| AI | Gemini, Claude, DeepSeek |
+| NLP | VADER |
+| ML | Stable-Baselines3 PPO |
+| Web App | Streamlit |
+| Charts | Plotly |
+
+---
+
+## ▶️ Run Locally
+
+```bash
 pip install -r requirements.txt
-
-# 3. Run the dashboard
 streamlit run app.py
-Opens at http://localhost:8501
+```
 
-API keys (all optional)
-The dashboard works without any API keys. Keys only unlock the AI features:
-FeatureKey neededGet itAI Morning BriefGemini, Claude, or DeepSeekSee belowAI ChatbotGemini, Claude, or DeepSeekSee belowBetter news scoringGemini, Claude, or DeepSeekSee belowMore headlinesNewsAPInewsapi.org (free tier)
-Google Gemini (free) — aistudio.google.com → Get API key → Create API key in new project
-Anthropic Claude — console.anthropic.com → API Keys → Create Key ($5 free credit on signup)
-DeepSeek — platform.deepseek.com → API Keys → top up ~$2 (lasts thousands of requests)
+---
 
-Project structure
+## 📂 Project Structure
+
+```text
 stock-dashboard/
-├── app.py              ← Streamlit dashboard (this file)
-├── requirements.txt    ← Python dependencies
-├── Untitled.ipynb      ← Jupyter notebook with PPO trading bot
-├── AAPL.csv            ← Original DataCamp dataset (used for initial exploration)
-└── README.md           ← This file
+│
+├── app.py
+├── requirements.txt
+├── PPO Training.ipynb
+├── README.md
+└── Excel basic calculations.xlsx
+```
 
-Tech stack
-LayerTechnologyDatayfinance, pandas_datareader, feedparserTechnical indicatorsta (RSI, MACD, ATR, Bollinger Bands, MA)Sentiment analysisVADER, Google Gemini, Claude, DeepSeekTrading agentstable-baselines3 (PPO), gymnasium, gym-anytradingWeb appStreamlitChartsPlotly (candlestick, volume, MACD, pie)DeploymentStreamlit Cloud
+---
 
-Limitations and honest disclaimers
+## ⚠️ Disclaimer
 
-Not financial advice. This is an educational project.
-The PPO agent trained on AAPL over 15 years looks profitable, but AAPL was one of the best-performing stocks in history. A buy-and-hold strategy would have significantly outperformed the bot.
-Historical backtests do not guarantee future performance.
-The signal system uses fixed thresholds (RSI > 70 = overbought) which work statistically but are not guarantees.
-Options flow data (put/call ratio) is only available for today — historical backtest uses a neutral default.
-Sentiment scores are automated — the AI does not have access to the full article, only the headline.
+This project is for educational purposes only.
 
+It is NOT financial advice.
 
-Acknowledgements
+Historical performance does not guarantee future results.
 
-Original DataCamp project: Stock Trading Simulation with Gymnasium — provided the foundation PPO trading bot and AAPL dataset
-Built entirely with Claude by Anthropic — signal engine, dashboard design, AI integration, portfolio tracker, multilingual support, and deployment
+---
+
+## 🙌 Acknowledgements
+
+- DataCamp reinforcement learning project inspiration
+- Claude by Anthropic for AI-assisted development
