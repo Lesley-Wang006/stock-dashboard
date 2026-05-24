@@ -4,7 +4,7 @@ A stock analysis dashboard that generates a daily morning brief using AI-powered
 
 One day, while browsing through DataCamp (a learning platform recommended by UWaterloo finance professors), I came across an open-source project about stock trading simulation with Gymnasium which is doing. After finishing the project, I started wondering: since we are all using historical data, is there a way to connect to live market data and track our own stocks in real time?
 
-I connected the dashboard to Yahoo Finance and researched several commonly used indicators such as RSI, MACD, and P/E ratio, etc. I also have friends who actively trade stocks, so I thought it would be interesting to build something that could help visualize portfolio creation and buy/sell signals more clearly.
+I connected the dashboard to Yahoo Finance and researched several commonly used indicators such as RSI, MACD, and P/E ratio, etc. I also have friends who actively trade stocks, so I thought it would be interesting to build something that could help to visualize the portfolio and decide to buy, sell or hold.
 
 To make the dashboard more interactive, I added AI chatbots including Gemini, Claude, and DeepSeek so users can ask questions about stocks or anything they interested in. After doing some of the technical analysis indicators calculations in Excel, I used Claude to help combine all the features together, and the final website was built with the assistance of [Claude](https://claude.ai) by Anthropic.
 
